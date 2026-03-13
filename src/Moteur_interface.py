@@ -4,14 +4,16 @@ import time
 from entity import Carre
 class MoteurPhysique:
     def __init__(self):
+        """"Initialisation du moteur physique et de la fenêtre"""
         sdl2.ext.init()
         self.window = sdl2.ext.Window("Moteur Physique NSI", size=(600, 700))
         self.window.show()
+
         self.renderer = sdl2.ext.Renderer(self.window)
-
-        self.last_time = sdl2.SDL_GetTicks()
         self.factory = sdl2.ext.SpriteFactory(sdl2.ext.TEXTURE, renderer=self.renderer)  
+        self.last_time = sdl2.SDL_GetTicks()
 
+        # Initialisation du carré
         self.CUBE_X = 50
         self.CUBE_Y = 50     
         sprite_carre = self.factory.from_color(sdl2.ext.Color(255, 0, 0), size=(self.CUBE_X, self.CUBE_Y))
@@ -37,7 +39,7 @@ class MoteurPhysique:
         sdl2.render.SDL_SetRenderDrawColor(raw_r, 0, 255, 0, 255) 
         sdl2.render.SDL_RenderDrawRect(raw_r, container_rect)
 
-        # 3. Cube
+        # 3. Carré
         dst_rect = sdl2.SDL_Rect(int(self.mon_carre.x), int(self.mon_carre.y), self.CUBE_X, self.CUBE_Y)
         sdl2.render.SDL_RenderCopy(raw_r, self.mon_carre.sprite.texture, None, dst_rect)
 
@@ -55,7 +57,7 @@ class MoteurPhysique:
                 return False
         return True
     
-    
+
     
     def colision(self, dt):
         """Gestion des collisions"""
@@ -94,10 +96,6 @@ class MoteurPhysique:
             
 
         sdl2.ext.quit()
-
-
-
-
 
 
 
