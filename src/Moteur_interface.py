@@ -3,15 +3,14 @@ import sdl2.ext
 import time
 from entity import Carre
 from sdl2 import SDL_KEYDOWN, SDLK_SPACE
-import code
-
+import config
 
 
 class MoteurPhysique:
     def __init__(self):
         """"Initialisation du moteur physique et de la fenêtre"""
         sdl2.ext.init()
-        self.window = sdl2.ext.Window("Moteur Physique NSI", size=(600, 700))
+        self.window = sdl2.ext.Window("Moteur Physique NSI", size=(config.WINDOW_WIDTH, config.WINDOW_HEIGHT))
         self.window.show()
 
         self.renderer = sdl2.ext.Renderer(self.window)
@@ -19,19 +18,21 @@ class MoteurPhysique:
         self.last_time = sdl2.SDL_GetTicks()
 
         # Initialisation du carré
-        self.CUBE_X = 20
-        self.CUBE_Y = 300
+        self.CUBE_X = config.CUBE_X
+        self.CUBE_Y = config.CUBE_Y
         sprite_carre = self.factory.from_color(sdl2.ext.Color(255, 0, 0), size=(self.CUBE_X, self.CUBE_Y))
         self.mon_carre = Carre(sprite_carre, x=100, y=100)
         
         # Définition des limites du monde
-        self.WORLD_X = 40
-        self.WORLD_Y = 40
-        self.WORLD_WIDTH = 520
-        self.WORLD_HEIGHT = 620
+        self.WORLD_X = config.WORLD_X
+        self.WORLD_Y = config.WORLD_Y
+        self.WORLD_WIDTH = config.WORLD_WIDTH
+        self.WORLD_HEIGHT = config.WORLD_HEIGHT
 
         # Framerate
-        self.FPS = 60
+        self.FPS = config.FPS
+        
+        print("Debug => Appuyez sur la barre d'espace pour entrer dans le mode debug")
 
     
     def construire(self):
@@ -56,7 +57,7 @@ class MoteurPhysique:
 
         # 4. Affichage
         sdl2.render.SDL_RenderPresent(raw_r)
-        
+
         return 1
 
 
@@ -87,39 +88,19 @@ class MoteurPhysique:
     
 
     
-    def colision(self, dt):
-        limite_sol = self.WORLD_Y + self.WORLD_HEIGHT - self.CUBE_Y -1
-        limite_plafond = self.WORLD_Y + 1
-        seuil = self.mon_carre.GRAVITE * dt 
-        prochaine_y = self.mon_carre.y + (self.mon_carre.v_y * dt)
+    def colision(self):
+        """Gestion des collisions et de la physique"""
+        seuil = config.GRAVITE * config.DT 
+        prochaine_y = self.mon_carre.y + (self.mon_carre.v_y * config.DT)
 
-        #print(f"limite_sol: {limite_sol}, prochaine_y: {prochaine_y}, seuil: {seuil}")
+        print(f"limite_sol: {config.LIMITE_SOL}, prochaine_y: {prochaine_y}, seuil: {seuil}")
 
-        if prochaine_y <= limite_plafond:
-            self.mon_carre.v_y *= -0.6
-            
-
-        if prochaine_y >= limite_sol:
-            self.mon_carre.y = limite_sol 
-            
-            if abs(self.mon_carre.v_y) < seuil:
-                self.mon_carre.v_y = 0
-                self.mon_carre.y = limite_sol  
-                self.mon_carre.on_ground = True
-            else:
-                self.mon_carre.v_y *= -0.6
-                self.mon_carre.on_ground = False  
-        else:
-            self.mon_carre.on_ground = False
-
-        if (self.mon_carre.x < self.WORLD_X or
-            self.mon_carre.x + self.CUBE_X > self.WORLD_X + self.WORLD_WIDTH):
-            self.mon_carre.v_x *= -1
-
-        self.mon_carre.update_movement(dt)
+        # Calcul de la gravité et des collisions
+        self.mon_carre.calcul_gravite()
+        
+        self.mon_carre.update_movement()
         return 1
         
-    
 
 
     def run_app(self):
@@ -139,11 +120,12 @@ class MoteurPhysique:
                 sdl2.SDL_Delay((1000 // self.FPS) - frame_time)
 
             self.last_time = sdl2.SDL_GetTicks()
-            dt = 1.0 / self.FPS  # dt fixe et stable = 0.016 
-
+            config.DT = 1.0 / self.FPS  # dt fixe et stable = 0.016 
+            
+            print(config.DT)
             self.handle_input()
             self.construire()
-            self.colision(dt)
+            self.colision()
             
 
         sdl2.ext.quit()
