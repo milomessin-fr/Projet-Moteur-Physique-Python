@@ -4,7 +4,7 @@ import time
 from entity import Carre
 from sdl2 import SDL_KEYDOWN, SDLK_SPACE
 import config
-
+import random
 
 class MoteurPhysique:
     def __init__(self):
@@ -14,15 +14,18 @@ class MoteurPhysique:
         self.window.show()
 
         self.renderer = sdl2.ext.Renderer(self.window)
-        self.factory = sdl2.ext.SpriteFactory(sdl2.ext.TEXTURE, renderer=self.renderer)  
+        config.FACTORY = sdl2.ext.SpriteFactory(sdl2.ext.TEXTURE, renderer=self.renderer)  
         self.last_time = sdl2.SDL_GetTicks()
 
-        # Initialisation du carré
-        self.CUBE_X = config.CUBE_X
-        self.CUBE_Y = config.CUBE_Y
-        sprite_carre = self.factory.from_color(sdl2.ext.Color(255, 0, 0), size=(self.CUBE_X, self.CUBE_Y))
-        self.mon_carre = Carre(sprite_carre, x=100, y=100)
-        
+        # Initialisation des grains de sable et de leur tableau et de la grille qui définit leur positions pour simplifier leur calcul de collision
+        self.tableau_grains = []
+        self.colonnes = list(range(config.GRILLE_X_MIN, config.GRILLE_X_MAX, config.TC))
+        self.lignes   = list(range(config.GRILLE_Y_MIN, config.GRILLE_Y_MAX, config.TC))
+
+        self.apparition_grains(config.GRAINS_QUANTITY)
+
+       
+
         # Définition des limites du monde
         self.WORLD_X = config.WORLD_X
         self.WORLD_Y = config.WORLD_Y
@@ -34,13 +37,18 @@ class MoteurPhysique:
         
         print("Debug => Appuyez sur la barre d'espace pour entrer dans le mode debug")
 
-    
+    def apparition_grains(self,nb_grains):
+        """Fait apparaître des grain de sable à une position aléatoire"""
+        for el in range(nb_grains):
+            self.tableau_grains.append(Carre(x=random.choice(self.colonnes), y=random.choice(self.lignes)))
+
+
+
     def construire(self):
         """Construction de la scène"""
         
 
         raw_r = self.renderer.sdlrenderer
-
         
         # 1. Fond
         sdl2.render.SDL_SetRenderDrawColor(raw_r, 0, 0, 0, 255)
@@ -52,8 +60,9 @@ class MoteurPhysique:
         sdl2.render.SDL_RenderDrawRect(raw_r, container_rect)
 
         # 3. Carré
-        dst_rect = sdl2.SDL_Rect(int(self.mon_carre.x), int(self.mon_carre.y), self.CUBE_X, self.CUBE_Y)
-        sdl2.render.SDL_RenderCopy(raw_r, self.mon_carre.sprite.texture, None, dst_rect)
+        for el in self.tableau_grains:
+            dst_rect = sdl2.SDL_Rect(int(el.x), int(el.y), config.CUBE_X, config.CUBE_Y)
+            sdl2.render.SDL_RenderCopy(raw_r, el.sprite.texture, None, dst_rect)
 
         # 4. Affichage
         sdl2.render.SDL_RenderPresent(raw_r)
@@ -90,14 +99,12 @@ class MoteurPhysique:
     def colision(self):
         """Gestion des collisions et de la physique"""
         seuil = config.GRAVITE * config.DT 
-        prochaine_y = self.mon_carre.y + (self.mon_carre.v_y * config.DT)
 
-        print(f"limite_sol: {config.LIMITE_SOL}, prochaine_y: {prochaine_y}, seuil: {seuil}")
-
-        # Calcul de la gravité et des collisions
-        self.mon_carre.calcul_gravite()
         
-        self.mon_carre.update_movement()
+        for el in self.tableau_grains:
+            prochaine_y = el.y + (el.v_y * config.DT)
+            el.calcul_gravite()
+            el.update_movement()
         return 1
         
 
@@ -119,9 +126,8 @@ class MoteurPhysique:
                 sdl2.SDL_Delay((1000 // self.FPS) - frame_time)
 
             self.last_time = sdl2.SDL_GetTicks()
-            config.DT = 1.0 / self.FPS  # dt fixe et stable = 0.016 
+            config.DT = 1.0 / self.FPS  
             
-            print(config.DT)
             self.handle_input()
             self.construire()
             self.colision()

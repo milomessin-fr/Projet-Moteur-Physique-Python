@@ -3,19 +3,17 @@ import config
 
 
 class Carre:
-    def __init__(self, sprite, x=0.0, y=0.0):
-        self.sprite = sprite
-        self.sprite.owner = self
-
-        self.sprite.position = x, y
-
+    def __init__(self,x ,y):
         self.x = x
         self.y = y
-
         self.v_x = 0
         self.v_y = 0
 
-        self.on_ground = False 
+        sprite_carre = config.FACTORY.from_color(sdl2.ext.Color(255, 0, 0), size=(config.CUBE_X, config.CUBE_Y))
+        self.sprite = sprite_carre
+        self.sprite.owner = self
+
+        self.sprite.position = self.x, self.y
 
 
     def retourner_position(self):
@@ -37,22 +35,18 @@ class Carre:
         elif seuil > 0:
             if prochaine_y >= limite_sol:
                 self.calcul_gravite_vecteur(limite_sol, seuil)
-        else:
-            self.on_ground = False
-
+        
 
     def calcul_gravite_vecteur(self, limite_sol, seuil):
-        """calcul de la gravité / vecteurs"""
+        """calcul du vecteurs pour la gravité si elle est négative ou positive"""
 
         self.y = limite_sol 
             
         if abs(self.v_y) < abs(seuil):
             self.v_y = 0
             self.y = limite_sol  
-            self.on_ground = True
         else:
             self.v_y *= config.RIGIDITE
-            self.on_ground = False  
             
 
             
@@ -63,7 +57,6 @@ class Carre:
         self.v_y += config.GRAVITE * config.DT
 
         self.y += self.v_y * config.DT
-        print(f"v_y={self.v_y:.2f} | y={self.y:.2f} | on_ground={self.on_ground}")
         self.sprite.x = round(self.x)
         self.sprite.y = round(self.y)
 
