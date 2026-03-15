@@ -4,17 +4,17 @@
 
 
 #grains de sables tailles et quantités
-CUBE_X = 4               #Taille des grains
+CUBE_X = 2            #Taille des grains
 CUBE_Y = CUBE_X
 
-GRAINS_QUANTITY = 10000 # explicite
+GRAINS_QUANTITY = 1000 # explicite
 
 
 
 
 # Moteur physique configurations
-GRAVITE = 800
-RIGIDITE = -0.16 #c le coef qui redistribue la vitesse après une collision
+GRAVITE = -50
+RIGIDITE = -0.8 #c le coef qui redistribue la vitesse après une collision
 
 
 

@@ -103,6 +103,7 @@ class MoteurPhysique:
         
         for el in self.tableau_grains:
             prochaine_y = el.y + (el.v_y * config.DT)
+            el.calcul_colision_mur()
             el.calcul_gravite()
             el.update_movement()
         return 1
