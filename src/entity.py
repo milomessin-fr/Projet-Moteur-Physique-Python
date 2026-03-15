@@ -40,7 +40,6 @@ class Carre:
         elif seuil > 0: #positive gravite
             if prochaine_y >= limite_sol:
                 self.calcul_gravite_vecteur(limite_sol, seuil)
-
             if prochaine_y <= limite_plafond:  
                 self.v_y *= config.RIGIDITE
 

@@ -7,14 +7,14 @@
 CUBE_X = 2            #Taille des grains
 CUBE_Y = CUBE_X
 
-GRAINS_QUANTITY = 1000 # explicite
+GRAINS_QUANTITY = 3000 # explicite
 
 
 
 
 # Moteur physique configurations
 GRAVITE = -50
-RIGIDITE = -0.8 #c le coef qui redistribue la vitesse après une collision
+RIGIDITE = -0.16 #c le coef qui redistribue la vitesse après une collision
 
 
 
@@ -31,7 +31,7 @@ WINDOW_HEIGHT = WORLD_Y + WORLD_HEIGHT + WORLD_Y
 
 
 FACTORY = None #Factory pour créer les sprites, les carrés .
-
+TTF = None #TTF pour le texte
 
 TC = CUBE_X #Unité de mesure des grains ça correspond à la taille d'un grain de sable
 GRILLE_X_MIN, GRILLE_X_MAX = WORLD_X+TC, WORLD_WIDTH + WORLD_X - TC

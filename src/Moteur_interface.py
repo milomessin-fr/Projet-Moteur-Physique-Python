@@ -5,6 +5,9 @@ from entity import Carre
 from sdl2 import SDL_KEYDOWN, SDLK_SPACE
 import config
 import random
+from widget import Texte
+import sdl2.sdlttf as ttf
+
 
 class MoteurPhysique:
     def __init__(self):
@@ -14,8 +17,9 @@ class MoteurPhysique:
         self.window.show()
 
         self.renderer = sdl2.ext.Renderer(self.window)
-        config.FACTORY = sdl2.ext.SpriteFactory(sdl2.ext.TEXTURE, renderer=self.renderer)  
+        config.FACTORY = sdl2.ext.SpriteFactory(sdl2.ext.TEXTURE, renderer=self.renderer) 
         self.last_time = sdl2.SDL_GetTicks()
+        ttf.TTF_Init()
 
         # Initialisation des grains de sable et de leur tableau et de la grille qui définit leur positions pour simplifier leur calcul de collision
         self.tableau_grains = []
@@ -24,7 +28,6 @@ class MoteurPhysique:
 
         self.apparition_grains(config.GRAINS_QUANTITY)
 
-       
 
         # Définition des limites du monde
         self.WORLD_X = config.WORLD_X
@@ -34,7 +37,13 @@ class MoteurPhysique:
 
         # Framerate
         self.FPS = config.FPS
-        
+
+        # Texte
+        self.texte_gravite = Texte(self.renderer, x=0, y=0)
+        self.texte_rigidite = Texte(self.renderer, x=150, y=0)
+        self.texte_grains_nb = Texte(self.renderer, x=300, y=0)
+        self.texte_fps_dt = Texte(self.renderer, x=450, y=0)
+
         print("Debug => Appuyez sur la barre d'espace pour entrer dans le mode debug")
 
     def apparition_grains(self,nb_grains):
@@ -50,21 +59,27 @@ class MoteurPhysique:
 
         raw_r = self.renderer.sdlrenderer
         
-        # 1. Fond
+        # Fond
         sdl2.render.SDL_SetRenderDrawColor(raw_r, 0, 0, 0, 255)
         sdl2.render.SDL_RenderClear(raw_r)
         
-        # 2. Bordure 
+        # Bordure 
         container_rect = sdl2.SDL_Rect(self.WORLD_X, self.WORLD_Y, self.WORLD_WIDTH, self.WORLD_HEIGHT)
         sdl2.render.SDL_SetRenderDrawColor(raw_r, 0, 255, 0, 255) 
         sdl2.render.SDL_RenderDrawRect(raw_r, container_rect)
 
-        # 3. Carré
+        # Carré
         for el in self.tableau_grains:
             dst_rect = sdl2.SDL_Rect(int(el.x), int(el.y), config.CUBE_X, config.CUBE_Y)
             sdl2.render.SDL_RenderCopy(raw_r, el.sprite.texture, None, dst_rect)
 
-        # 4. Affichage
+        # Texte
+        self.texte_gravite.renderer_text(text=f"GRAVITE: {config.GRAVITE}")
+        self.texte_rigidite.renderer_text(text=f"RIGIDITE: {config.RIGIDITE}")
+        self.texte_grains_nb.renderer_text(text=f"GRAINS: {config.GRAINS_QUANTITY}")
+        self.texte_fps_dt.renderer_text(text=f"FPS: {(1/config.DT):.2f} | DT: {config.DT:.3f}")
+
+        # Affichage
         sdl2.render.SDL_RenderPresent(raw_r)
 
         return 1
@@ -128,7 +143,7 @@ class MoteurPhysique:
 
             self.last_time = sdl2.SDL_GetTicks()
             config.DT = 1.0 / self.FPS  
-            
+            print(config.DT)
             self.handle_input()
             self.construire()
             self.colision()
