@@ -1,4 +1,4 @@
-# Pour ce projet: 
+
 
 ### Library pour l'interface utilisé sera :
 
@@ -7,6 +7,10 @@
    
 Voici la documentation: https://pypi.org/project/PySDL2/
 Tutoriel pour avoir les bases: https://pysdl2.readthedocs.io/en/0.9.13/
+
+
+
+
 
 
 
@@ -32,11 +36,16 @@ complexe et difficile a imaginer des recherches approfondis seront nécéssaires
 
 
 
+
 ### Séparation des Threads: rendu et physique concept a utilisé :
 - Double Buffering
 
+
+
 ### Les Bordures des entités : 
 - Oui mais faire un mode Static = True pour les entités
+
+
 
 ### Le Problème de l'Explosion (Transfert de Force) concept a utilisé :
 - Rayon d'explosion
