@@ -35,7 +35,7 @@ complexe et difficile a imaginer des recherches approfondis seront nécéssaires
                            - dist = la distance euclidienne entre le centre de la boule et le grain de sable individuel (regarde le calcul de dist sur internet)
                            - V_boule = vecteur vitesse de la boule donc v_y
                            - M_boule = Masse de la boule
-                           - v_grain = vecteur de vitesse du grain
+                           - v_grain = vecteur de vitesse du grain donc v_y aussi
 
 - ajouté un coefficient de dissipation (friction) sinon les grains sur l'axe x ne s'arreteront jamais
 
