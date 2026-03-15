@@ -47,7 +47,7 @@ complexe et difficile a imaginer des recherches approfondis seront nécéssaires
 
 
 
-### Le Problème de l'Explosion (Transfert de Force) concept a utilisé :
+### Le Problème de l'Explosion (Transfert de Force) concept a utilisé : si on ajoute du calcul de densité et de pression plus besoin de rayon d'explosion
 - Rayon d'explosion
 - Vecteur répulsion= Pour chaque grains dans le rayon d'explosion il faudra calculer un vecteur qui commence au centre de la boule et qui va jusqu'au grains 
 - Calcul d'impulsion trouvé : v_grain ​= v_grain​+(V_boule​⋅M_boule / dist**2​​) 
