@@ -1,5 +1,5 @@
 
-#Titre : système de scene, entité, colision séparé (approche orienté ECS=Entity Component System)
+# Titre : système de scene, entité, colision séparé (approche orienté ECS=Entity Component System)
 
 Pour cela j'ai besoin de thread qui sépare le rendu, du calcul de colision
 Dans la boucle de jeu, on efface en boucle l'écran et si il ya une scene de chosis alors on la déssine en boucle. En parallèle toujours faire tourner 
