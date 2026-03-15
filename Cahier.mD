@@ -37,10 +37,10 @@ complexe et difficile a imaginer des recherches approfondis seront nécéssaires
                            - M_boule = Masse de la boule
                            - v_grain = vecteur de vitesse du grain
 
--ajouté un coefficient de dissipation (friction) sinon les grains sur l'axe x ne s'arreteront jamais
+- ajouté un coefficient de dissipation (friction) sinon les grains sur l'axe x ne s'arreteront jamais
 
 
-## Tache 
+### Tache 
 
 - Gérer la data des matériaux
 
