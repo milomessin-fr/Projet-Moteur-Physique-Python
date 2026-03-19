@@ -1,12 +1,3 @@
-# Pour ce projet: 
+# Protoype v0 
 
-### Library pour l'interface utilisé sera :
-
-        
-        pysdl2
-   
-
-        Voici la documentation: https://pypi.org/project/PySDL2/
-        Tutoriel pour avoir les bases: https://pysdl2.readthedocs.io/en/0.9.13/
-
-installer les dépéndances dans le requirement.txt
+ne plus rien modifier sur cette branche 
