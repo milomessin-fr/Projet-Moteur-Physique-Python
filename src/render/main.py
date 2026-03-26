@@ -16,7 +16,7 @@ from ..config import config_collision as configC
 
 from .debug import DebugMenu
 from ..scene import SceneBase, SceneTEST
-from ..core.collision import Collision 
+from ..core.collision import Collision
 
 
 
