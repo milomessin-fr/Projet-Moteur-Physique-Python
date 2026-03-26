@@ -2,7 +2,7 @@
 
 ### Semaine 1 
 
-Nous avons premièrement réfléchit à comment mettre en place la physique dans le moteur de jeu en informatique (Matteo).
+Premièrement, on a commencé à réfléchir à comment mettre en place la physique dans le moteur de jeu en informatique (Matteo).
 Nous avons ensuite effectué des recherches concernant les librairies à utiliser comme PySDL,
 qui sera utilisé pour l'interface (Milo) et la création du cahier des charges (Ayoub et Milo).
 Et début de la réflexion sur l'architecture du projet (Youness).
