@@ -1,5 +1,5 @@
-Voici le Journal de Bord
----
+# Voici le Journal de Bord
+
 ### Semaine 1 
 
 Nous avons réfléchit à comment mettre en place la physique en informatique (Matteo).
