@@ -1,5 +1,7 @@
 
  # Bibliothèque pysdl
+from curses import window
+
 import sdl2 
 import sdl2.ext 
 from sdl2 import SDL_KEYDOWN, SDLK_SPACE
@@ -9,7 +11,7 @@ import sdl2.sdlttf as ttf
 import random
 import time
 import threading
-
+import ctypes
 # import de fichiers
 from ..config import config_window as config
 from ..config import config_collision as configC
@@ -23,11 +25,10 @@ from ..core.collision import Collision
 
 
 
-
-
 class MoteurRendu:
     def __init__(self):
         """"Récupération des valeurs"""
+        self.quantity = 0
         self.WINDOW_WIDTH = config.WINDOW_WIDTH
         self.WINDOW_HEIGHT = config.WINDOW_HEIGHT
         self.FPS = config.FPS
@@ -79,7 +80,20 @@ class MoteurRendu:
         """gère les events"""
         events = sdl2.ext.get_events()
         for event in events:
-
+            x_ptr = ctypes.c_int(0)
+            y_ptr = ctypes.c_int(0)
+            button_state = sdl2.SDL_GetMouseState(ctypes.byref(x_ptr), ctypes.byref(y_ptr))
+    
+            if button_state & sdl2.SDL_BUTTON(sdl2.SDL_BUTTON_LEFT):
+                mouse_pos = (x_ptr.value, y_ptr.value)
+                if config.MOUSE_OPTION == 1:
+                    spawn_sand_at_mouse(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
+                elif config.MOUSE_OPTION == 2:
+                    spawn_stone_at_mouse(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
+                elif config.MOUSE_OPTION == 0:
+                    spawn_clear_at_mouse(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
+                elif config.MOUSE_OPTION == 3:
+                    spawn_mesh_circle(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
             if event.type == sdl2.SDL_QUIT: #ferme l'application
                 self.running = False
             
@@ -87,8 +101,9 @@ class MoteurRendu:
                 if event.key.keysym.sym == SDLK_SPACE :
                     self.mode_debug.menu()
                     
-               
-                    
+        
+    
+                        
 
     def render_scene(self, scene="base"):
         """initialise une scene"""
@@ -112,7 +127,6 @@ class MoteurRendu:
         self.collision.start()
 
         while self.running:
-
             self.event()
 
             self.fixed_timestep()
@@ -122,15 +136,97 @@ class MoteurRendu:
 
 
         self.collision.stop()
+        self.mode_debug.stop()
         sdl2.ext.quit()
 
 
 
 
+def spawn_sand_at_mouse(mouse_pos, cell_size, radius=0):
+    mouse_x, mouse_y = mouse_pos
+
+    global_mouse_x = mouse_x // cell_size
+    global_mouse_y = mouse_y // cell_size
+
+    for dx in range(-radius, radius + 1):
+        for dy in range(-radius, radius + 1):
+            if dx * dx + dy * dy <= radius * radius:
+                global_x = global_mouse_x + dx
+                global_y = global_mouse_y + dy
+
+                chunk_x = global_x // configC.CHUNK_SIZE
+                chunk_y = global_y // configC.CHUNK_SIZE
+                chunk_xy = (chunk_x, chunk_y)
+
+                local_x = global_x % configC.CHUNK_SIZE
+                local_y = global_y % configC.CHUNK_SIZE
+
+                if chunk_xy in configC.MAP:
+                    configC.MAP[chunk_xy][(local_x, local_y)] = 1
+                    configC.MAP_DIRTY.add(chunk_xy)
+                    configC.MAP_ACTIVE.add(chunk_xy)
+
+    
+def spawn_stone_at_mouse(mouse_pos, cell_size, radius=0):
+    mouse_x, mouse_y = mouse_pos
+
+    global_mouse_x = mouse_x // cell_size
+    global_mouse_y = mouse_y // cell_size
+
+    for dx in range(-radius, radius + 1):
+        for dy in range(-radius, radius + 1):
+            if dx * dx + dy * dy <= radius * radius:
+                global_x = global_mouse_x + dx
+                global_y = global_mouse_y + dy
+
+                chunk_x = global_x // configC.CHUNK_SIZE
+                chunk_y = global_y // configC.CHUNK_SIZE
+                chunk_xy = (chunk_x, chunk_y)
+
+                local_x = global_x % configC.CHUNK_SIZE
+                local_y = global_y % configC.CHUNK_SIZE
+
+                if chunk_xy in configC.MAP:
+                    configC.MAP[chunk_xy][(local_x, local_y)] = 5
+                    configC.MAP_DIRTY.add(chunk_xy)
+                    configC.MAP_ACTIVE.add(chunk_xy)
+
+    
+def spawn_clear_at_mouse(mouse_pos, cell_size, radius=0):
+    mouse_x, mouse_y = mouse_pos
+
+    global_mouse_x = mouse_x // cell_size
+    global_mouse_y = mouse_y // cell_size
+
+    for dx in range(-radius, radius + 1):
+        for dy in range(-radius, radius + 1):
+            if dx * dx + dy * dy <= radius * radius:
+                global_x = global_mouse_x + dx
+                global_y = global_mouse_y + dy
+
+                chunk_x = global_x // configC.CHUNK_SIZE
+                chunk_y = global_y // configC.CHUNK_SIZE
+                chunk_xy = (chunk_x, chunk_y)
+
+                local_x = global_x % configC.CHUNK_SIZE
+                local_y = global_y % configC.CHUNK_SIZE
+
+                if chunk_xy in configC.MAP:
+                    configC.MAP[chunk_xy][(local_x, local_y)] = 0
+                    configC.MAP_DIRTY.add(chunk_xy)
+                    configC.MAP_ACTIVE.add(chunk_xy)
 
 
+def spawn_mesh_circle(mouse_pos, cell_size, radius=0):
+    mouse_x,mouse_y = mouse_pos
+    boule_x = mouse_x // cell_size
+    boule_y = mouse_y // cell_size
+    boule_rayon = radius
+    configC.MESH_LISTE = [(boule_x, boule_y, boule_rayon)] # une seul pour l'instant
+    
 
 
+             
 if __name__ == "__main__":
     moteur_rendu = MoteurRendu()
     
