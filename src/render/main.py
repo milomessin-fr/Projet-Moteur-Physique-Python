@@ -17,7 +17,8 @@ from ..config import config_window as config
 from ..config import config_collision as configC
 
 from .debug import DebugMenu
-from ..scene import SceneBase, SceneTEST
+from ..scene import  SceneTEST
+from ..scene import RigidBody
 from ..core.collision import Collision 
 
 
@@ -77,29 +78,34 @@ class MoteurRendu:
 
 
     def event(self):
-        """gère les events"""
         events = sdl2.ext.get_events()
+        
         for event in events:
-            x_ptr = ctypes.c_int(0)
-            y_ptr = ctypes.c_int(0)
-            button_state = sdl2.SDL_GetMouseState(ctypes.byref(x_ptr), ctypes.byref(y_ptr))
-    
-            if button_state & sdl2.SDL_BUTTON(sdl2.SDL_BUTTON_LEFT):
-                mouse_pos = (x_ptr.value, y_ptr.value)
-                if config.MOUSE_OPTION == 1:
-                    spawn_sand_at_mouse(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
-                elif config.MOUSE_OPTION == 2:
-                    spawn_stone_at_mouse(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
-                elif config.MOUSE_OPTION == 0:
-                    spawn_clear_at_mouse(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
-                elif config.MOUSE_OPTION == 3:
-                    spawn_mesh_circle(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
-            if event.type == sdl2.SDL_QUIT: #ferme l'application
+            if event.type == sdl2.SDL_QUIT:
                 self.running = False
             
-            if event.type == SDL_KEYDOWN: # lance le mode debug
-                if event.key.keysym.sym == SDLK_SPACE :
+            if event.type == sdl2.SDL_KEYDOWN:
+                if event.key.keysym.sym == SDLK_SPACE:
                     self.mode_debug.menu()
+
+            if event.type == sdl2.SDL_MOUSEBUTTONDOWN:
+                if event.button.button == sdl2.SDL_BUTTON_LEFT:
+                    mouse_pos = (event.button.x, event.button.y)
+                    if config.MOUSE_OPTION == 3:
+                        spawn_mesh_circle(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
+
+            if event.type == sdl2.SDL_MOUSEMOTION or event.type == sdl2.SDL_MOUSEBUTTONDOWN:
+                x_ptr = ctypes.c_int(0)
+                y_ptr = ctypes.c_int(0)
+                button_state = sdl2.SDL_GetMouseState(ctypes.byref(x_ptr), ctypes.byref(y_ptr))
+                if button_state & sdl2.SDL_BUTTON(sdl2.SDL_BUTTON_LEFT):
+                    mouse_pos = (x_ptr.value, y_ptr.value)
+                    if config.MOUSE_OPTION == 1:
+                        spawn_sand_at_mouse(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
+                    elif config.MOUSE_OPTION == 2:
+                        spawn_stone_at_mouse(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
+                    elif config.MOUSE_OPTION == 0:
+                        spawn_clear_at_mouse(mouse_pos, configC.CELL_SIZE, radius=configC.RADIUS)
                     
         
     
@@ -107,10 +113,6 @@ class MoteurRendu:
 
     def render_scene(self, scene="base"):
         """initialise une scene"""
-        if scene == "base":
-            if self.scene_base == None :
-                self.scene_base = SceneBase(renderer=self.renderer, factory=self.factory)
-            self.scene_base.construire()
         if scene == "test":
             if self.scene_test == None:
                 self.scene_test = SceneTEST(renderer=self.renderer, factory=self.factory)
@@ -187,7 +189,7 @@ def spawn_stone_at_mouse(mouse_pos, cell_size, radius=0):
                 local_y = global_y % configC.CHUNK_SIZE
 
                 if chunk_xy in configC.MAP:
-                    configC.MAP[chunk_xy][(local_x, local_y)] = 5
+                    configC.MAP[chunk_xy][(local_x, local_y)] = 2
                     configC.MAP_DIRTY.add(chunk_xy)
                     configC.MAP_ACTIVE.add(chunk_xy)
 
@@ -212,18 +214,59 @@ def spawn_clear_at_mouse(mouse_pos, cell_size, radius=0):
                 local_y = global_y % configC.CHUNK_SIZE
 
                 if chunk_xy in configC.MAP:
-                    configC.MAP[chunk_xy][(local_x, local_y)] = 0
+                    configC.MAP[chunk_xy][(local_x, local_y)] = 4
                     configC.MAP_DIRTY.add(chunk_xy)
                     configC.MAP_ACTIVE.add(chunk_xy)
 
 
 def spawn_mesh_circle(mouse_pos, cell_size, radius=0):
-    mouse_x,mouse_y = mouse_pos
+    mouse_x, mouse_y = mouse_pos
     boule_x = mouse_x // cell_size
     boule_y = mouse_y // cell_size
     boule_rayon = radius
-    configC.MESH_LISTE = [(boule_x, boule_y, boule_rayon)] # une seul pour l'instant
+    grain_type = 3
+
+    for old_mesh in configC.MESH_LISTE:
+        cx, cy = int(round(old_mesh.x)), int(round(old_mesh.y))
+        chunks_to_mark = set()
+        for rx, ry in old_mesh.mesh_relative:
+            wx = (cx + rx) // configC.CHUNK_SIZE
+            wy = (cy + ry) // configC.CHUNK_SIZE
+            chunks_to_mark.add((wx, wy))
+            chunks_to_mark.add((wx, wy + 1))
+            chunks_to_mark.add((wx - 1, wy))
+            chunks_to_mark.add((wx + 1, wy))
+
+        for chunk_xy in chunks_to_mark:
+            if chunk_xy in configC.MAP:
+                configC.MAP_DIRTY.add(chunk_xy)
+                configC.MAP_ACTIVE.add(chunk_xy)
+
+        old_mesh.effacer()
+
+    configC.MESH_LISTE.clear()
+    configC.MESH.clear()
+
+    x_min = boule_x - boule_rayon
+    x_max = boule_x + boule_rayon
+    y_min = boule_y - boule_rayon
+    y_max = boule_y + boule_rayon
+
+    rayon_carre = boule_rayon * boule_rayon
+    for y in range(y_min, y_max + 1):
+        for x in range(x_min, x_max + 1):
+
+            dx = x - boule_x
+            dy = y - boule_y
+
+            if (dx * dx) + (dy * dy) <= rayon_carre:
+                configC.MESH.add((dx, dy))
+
+    position_grille = (float(boule_x), float(boule_y))
+    mesh = RigidBody(position_grille, grain_type, boule_rayon)
+    configC.MESH_LISTE.append(mesh)
     
+
 
 
              

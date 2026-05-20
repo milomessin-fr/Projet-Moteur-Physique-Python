@@ -4,7 +4,7 @@ import sdl2
 import time
 import random
 #import de fichiers
-from ..config import config_collision as config
+from ..config import config_collision as configC
 from ..config import config_window as configW
 class Collision:
     def __init__(self): 
@@ -30,207 +30,157 @@ class Collision:
             self.accumulator += frame_time
             while self.accumulator >= self.physics_dt:
                 with self.verrou:
-                    self.update_stone_ball()
-                    self.chunk_active()
+                    if not configC.MAP_OBJECT:
+                        return
+                    self.tick_physics()
                 self.accumulator -= self.physics_dt
             sdl2.SDL_Delay(1)
 
-    def update_stone_ball(self):
-        if not config.MESH_LISTE:
-            return
-        boule_x, boule_y, boule_rayon = config.MESH_LISTE[0]
-        prochain_y = boule_y + 1
 
 
 
 
-
-    def chunk_active(self):
-        active_chunks = list(config.MAP_ACTIVE)
-        self.flip_flop = not self.flip_flop
-        already_moved = set()
-        
-        for xy_chunk in active_chunks:
-            chunk_data = config.MAP[xy_chunk]
-            has_moved = False
-
-            colonnes_x = range(config.CHUNK_SIZE) if self.flip_flop else range(config.CHUNK_SIZE - 1, -1, -1)
-
-            for x in colonnes_x:
-                for y in range(config.CHUNK_SIZE - 1, -1, -1):
-                    if (xy_chunk, x, y) in already_moved:
-                        continue
-                        
-                    if (x, y) not in chunk_data:
-                        continue
-                        
-                    vitesse_actuelle = chunk_data[(x, y)]
-                    
-                    if vitesse_actuelle == 0:
-                        continue
-
-                    if vitesse_actuelle == 9:
-                        continue #--- IGNORE --- Pierre immobile
-
-                    if vitesse_actuelle == 5:
-                        continue
-                    
-                    moved, dest_chunk, dest_x, dest_y = self.process_grain_physics_tracked(xy_chunk, x, y, vitesse_actuelle)
-                    
-                    if moved:
-                        has_moved = True
-                        already_moved.add((dest_chunk, dest_x, dest_y))
-
-            if not has_moved:
-                config.MAP_ACTIVE.discard(xy_chunk)
-
-
-
-    def process_grain_physics_tracked(self, chunk_xy, x, y, vitesse):
-        cases_parcourues, dest_chunk, dest_y = self.calculate_trajectory(chunk_xy, x, y, vitesse)
-
-        if cases_parcourues > 0:
-            nouvelle_vitesse = self.calculate_acceleration(vitesse)
-            self.update_gravity(chunk_xy, x, y, dest_chunk, x, dest_y, nouvelle_vitesse)
-            return True, dest_chunk, x, dest_y
-        else:
-            moved_diagonal, diag_chunk, diag_x, diag_y = self.check_diagonals(chunk_xy, x, y, vitesse)
-            
-            if moved_diagonal:
-                self.update_gravity(chunk_xy, x, y, diag_chunk, diag_x, diag_y, 1)
-                return True, diag_chunk, diag_x, diag_y
-            else:
-                self.handle_blocked_grain(chunk_xy, x, y, vitesse)
-                return False, chunk_xy, x, y
-
-
-
-
-
-
-
-
-    def check_diagonals(self, chunk_xy, x, y, vitesse):
+    def update_chunks(self,chunk_xy):
+        self.updated_cells = set()
+        chunk = configC.MAP[chunk_xy]
         chunk_x, chunk_y = chunk_xy
+        self.info_matiere = configC.INFO_OBJET  # nom , densité, type, masse, static.
+        self.had_change = False
 
-        directions = []
 
-        if random.random() < 0.5:
-            directions = [-1, 1]
-        else:
-            directions = [1, -1]
+        for (x,y), cell_type in list(chunk.items()):
+            self.world_x = chunk_x * configC.CHUNK_SIZE + x
+            self.world_y = chunk_y * configC.CHUNK_SIZE + y
+            cell_below = configC.MAP_OBJECT.get_cell(self.world_x, self.world_y + 1)
+            if (self.world_x,self.world_y) in self.updated_cells:
+                continue
+
+            if cell_below == -1:
+                continue
+
+            
+            
+            if self.info_matiere[cell_type][2] == "powder":
+
+                if self.info_matiere[cell_type][1] > self.info_matiere[cell_below][1]:
+                    self.grains_densite(cell_type,cell_below, 0, 1)
+                    continue
+
+                self.move_powder(cell_type) 
+
+            if self.info_matiere[cell_type][2] == "liquid":
+
+                if self.info_matiere[cell_type][1] > self.info_matiere[cell_below][1]:
+                    self.grains_densite(cell_type,cell_below, 0, 1)
+                    continue
+
+                self.move_liquid(cell_type) 
+
+            if self.info_matiere[cell_type][2] == "solid":
+                continue
+
+
+
+        return self.had_change
+    
+
+    def grains_densite(self,cell_1, cell_2, x,y):
+       
+        if self.info_matiere[cell_1][1] > self.info_matiere[cell_2][1] :
+                self.updated_cells.add((self.world_x,self.world_y))
+                self.updated_cells.add((self.world_x+x,self.world_y+y))
+
+                configC.MAP_OBJECT.set_cell(self.world_x , self.world_y , cell_2)
+                configC.MAP_OBJECT.set_cell(self.world_x + x, self.world_y + y, cell_1)
+                self.had_change = True
+                return True
+        return False
+
+
+
+    def move_powder(self,cell):
+
+        directions = [1,-1]
+        random.shuffle(directions)
 
         for dx in directions:
-            prochain_x = x + dx
-            prochain_y = y + 1
-            prochain_chunk = chunk_xy
-
-            if prochain_y == config.CHUNK_SIZE:
-                prochain_chunk = (chunk_x, chunk_y + 1)
-                prochain_y = 0
-
-            cx, cy = prochain_chunk
-            if prochain_x < 0:
-                prochain_chunk = (cx - 1, cy)
-                prochain_x = config.CHUNK_SIZE - 1
-            elif prochain_x == config.CHUNK_SIZE:
-                prochain_chunk = (cx + 1, cy)
-                prochain_x = 0
-
-            if prochain_chunk in config.MAP:
-                if self.can_move_to(prochain_chunk, prochain_x, prochain_y):
-                    return True, prochain_chunk, prochain_x, prochain_y
-
-        return False, chunk_xy, x, y
+            cell_dx = configC.MAP_OBJECT.get_cell(self.world_x+dx,self.world_y+1)
+            if cell_dx == -1:
+                continue
+            self.grains_densite(cell, cell_dx, dx, 1)
+            break
 
 
-
-
-
-
-
-
-
-
-
-
-    def calculate_trajectory(self, chunk_xy, x, y, vitesse):
-        cases_parcourues = 0
-        test_y = y
-        test_chunk = chunk_xy
-        chunk_x, chunk_y = chunk_xy
-
-        for _ in range(vitesse):
-            prochain_y = test_y + 1
-            prochain_chunk = test_chunk
-            chunk_x, chunk_y = test_chunk
-
-            if prochain_y == config.CHUNK_SIZE:
-                prochain_chunk = (chunk_x, chunk_y + 1)
-                prochain_y = 0
-
-            if prochain_chunk not in config.MAP:
-                break
-
-            if self.can_move_to(prochain_chunk, x, prochain_y):
-                test_y = prochain_y
-                test_chunk = prochain_chunk
-                cases_parcourues += 1
-            else:
-                break
-
-        return cases_parcourues, test_chunk, test_y
-
-    def can_move_to(self, chunk_xy, x, y):
-        return config.MAP[chunk_xy].get((x, y), 0) == 0
-
-    def calculate_acceleration(self, vitesse_actuelle):
-        return min(vitesse_actuelle + 1, config.MAX_VELOCITY_GRAINS)
-
-    def handle_blocked_grain(self, chunk_xy, x, y, vitesse_actuelle):
-        if vitesse_actuelle > 1:
-            config.MAP[chunk_xy][(x, y)] = 1
-
-
-
-
-    def update_gravity(self, src_chunk, src_x, src_y, dest_chunk, dest_x, dest_y, nouvelle_vitesse):
-            config.MAP[src_chunk][(src_x, src_y)] = 0      
-            config.MAP[dest_chunk][(dest_x, dest_y)] = nouvelle_vitesse   
-            
-            config.MAP_DIRTY.add(src_chunk)
-            config.MAP_ACTIVE.add(src_chunk)
-            
-            if src_chunk != dest_chunk:
-                config.MAP_DIRTY.add(dest_chunk)
-                config.MAP_ACTIVE.add(dest_chunk)
-                
-            src_cx, src_cy = src_chunk
-            
-            if src_y == 0: 
-                top = (src_cx, src_cy - 1)
-                if top in config.MAP: config.MAP_ACTIVE.add(top)
-            if src_x == 0: 
-                left = (src_cx - 1, src_cy)
-                if left in config.MAP: config.MAP_ACTIVE.add(left)
-            if src_x == config.CHUNK_SIZE - 1: 
-                right = (src_cx + 1, src_cy)
-                if right in config.MAP: config.MAP_ACTIVE.add(right)
-
-    def mark_chunks_modified(self, src_chunk, dest_chunk):
-        config.MAP_DIRTY.add(src_chunk)
-        config.MAP_ACTIVE.add(src_chunk)
+    def move_liquid(self, cell):
+        directions = [1, -1]
+        random.shuffle(directions)
+        vitesse = 2
         
-        if src_chunk != dest_chunk:
-            config.MAP_DIRTY.add(dest_chunk)
-            config.MAP_ACTIVE.add(dest_chunk)
+        for dx in directions:
+            cell_dx = configC.MAP_OBJECT.get_cell(self.world_x + dx, self.world_y + 1)
+            if cell_dx == -1:
+                continue
+            if self.grains_densite(cell, cell_dx, dx, 1):
+                return 
+        
+        random.shuffle(directions)
+        for direction_signe in directions:
+            derniere_case_libre_x = 0
+            
+            for i in range(1, vitesse + 1):
+                decalage_x = direction_signe * i
+                cell_hx = configC.MAP_OBJECT.get_cell(self.world_x + decalage_x, self.world_y)
+                
+                if cell_hx == -1:
+                    break
+                if self.info_matiere[cell][1] <= self.info_matiere[cell_hx][1]:
+                    break
+                
+                derniere_case_libre_x = decalage_x
+            if derniere_case_libre_x != 0:
+                cell_cible = configC.MAP_OBJECT.get_cell(self.world_x + derniere_case_libre_x, self.world_y)
+                if self.grains_densite(cell, cell_cible, derniere_case_libre_x, 0):
+                    return
 
-    def wake_up_neighbors(self, src_chunk, src_y):
-        if src_y == 0:
-            chunk_x, chunk_y = src_chunk
-            top_chunk_xy = (chunk_x, chunk_y - 1)
-            if top_chunk_xy in config.MAP:
-                config.MAP_ACTIVE.add(top_chunk_xy)
+
+
+
+
+
+
+    def find_max_hauteur_grains(self, cell_1):
+        g = 1
+        while True:
+            cell_above = configC.MAP_OBJECT.get_cell(self.world_x, self.world_y - g)
+
+            if cell_above == -1:     
+                return -(g - 1)
+
+            if self.info_matiere[cell_1][1] > self.info_matiere[cell_above][1]:      
+                return -g
+            
+            if self.info_matiere[cell_1][1] <= self.info_matiere[cell_above][1]: 
+                return -(g - 1)
+            g += 1
+                
+
+            
+
+
+
+    
+
+
+
+    def tick_physics(self):
+        configC.MAP_OBJECT.activate_dirty_chunks()
+        for mesh in configC.MESH_LISTE:
+            mesh.update_physique()
+
+        for chunk_xy in list(configC.MAP_ACTIVE):
+            self.had_change = self.update_chunks(chunk_xy)
+            configC.MAP_OBJECT.desactivate_stable_chunk(chunk_xy, self.had_change)
+
 
 
     def start(self):

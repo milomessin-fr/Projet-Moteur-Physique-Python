@@ -26,7 +26,11 @@ class DebugMenu:
                 self.clear_grain()
                 self.setup_ground()
                 print("Ground setup completed.")
-            
+
+            elif input_debug == 'option mesh':
+                configW.MOUSE_OPTION = 3
+                print("Mouse option set to mesh.")
+
             elif input_debug == 'option stone':
                 configW.MOUSE_OPTION = 2
                 print("Mouse option set to stone.")
@@ -35,9 +39,9 @@ class DebugMenu:
                 configW.MOUSE_OPTION = 1
                 print("Mouse option set to sand.")
             
-            elif input_debug == 'option clear':
+            elif input_debug == 'option water':
                 configW.MOUSE_OPTION = 0
-                print("Mouse option set to clear.")
+                print("Mouse option set to water.")
 
 
             else:
